@@ -1,0 +1,7 @@
+<div class="sortable-pie">
+
+  <svg [attr.height]="height" [attr.width]="width" id="pie">
+  </svg>
+  <button (click)="loadData()">Fetch new data</button>
+  <app-sortable-pie-legend [data]="data" (sortChange)="onSortChange($event)" [palette]="palette"></app-sortable-pie-legend>
+</div>

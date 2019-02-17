@@ -1,0 +1,12 @@
+<table>
+  <tr>
+    <th></th>
+    <th class="clickable" (click)="sortOnCategory($event)">Category</th>
+    <th class="clickable" (click)="sortOnQuantity($event)">Quantity</th>
+  </tr>
+  <tr *ngFor="let row of data">
+    <td [style.background]="palette(row.color)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td>{{row.category}}</td>
+    <td>{{row.quantity}}</td>
+  </tr>
+</table>
