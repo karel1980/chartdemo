@@ -7,6 +7,7 @@ import {SortablePieLegendComponent} from './sortable-pie-legend/sortable-pie-leg
 import {GroupedStacksComponent} from './grouped-stacks/grouped-stacks.component';
 import {HelloComponent} from './hello/hello.component';
 import {Route, RouterModule} from "@angular/router";
+import {NestedDemoComponent} from './nested-demo/nested-demo.component';
 
 
 const routes: Route[] = [
@@ -19,7 +20,10 @@ const routes: Route[] = [
   },
   { path: 'stacks',
     component: GroupedStacksComponent
-  }
+  },
+  { path: 'nested',
+    component: NestedDemoComponent
+  },
 ];
 
 @NgModule({
@@ -28,7 +32,8 @@ const routes: Route[] = [
     SortablePieComponent,
     SortablePieLegendComponent,
     GroupedStacksComponent,
-    HelloComponent
+    HelloComponent,
+    NestedDemoComponent
   ],
   imports: [
     BrowserModule,

@@ -1,6 +1,5 @@
 import {Component, OnInit} from '@angular/core';
 import * as d3 from "d3";
-import {svg} from "d3";
 
 interface Data {
   groupNames: string[];
@@ -15,7 +14,7 @@ interface Group {
 
 interface Stack {
   categoryName: string,
-  values: {[key:string]: number};
+  values: { [key: string]: number };
 }
 
 @Component({
@@ -35,6 +34,9 @@ export class GroupedStacksComponent implements OnInit {
 
   chartYScale;
 
+  svg;
+  chart;
+
   constructor() {
   }
 
@@ -46,20 +48,25 @@ export class GroupedStacksComponent implements OnInit {
       .domain([0, 100])
       .range([groupHeight, 0] as ReadonlyArray<number>);
 
+    this.svg = this.createSvg();
+    this.chart = this.createChart(this.svg);
+    this.createImportantHeight(this.chart, 80, -this.chartMargins.left + 10, "Maximum effort");
+    this.createImportantHeight(this.chart, 50, -this.chartMargins.left + 50, "Medium effort");
 
-    let svg = d3.select('.chart')
+    this.updateChart();
+  }
+
+  private updateChart() {
+    const groups = this.createGroups(this.chart, this.data.groups);
+    this.createStacks(groups);
+  }
+
+  private createSvg() {
+    return d3.select('.chart')
       .append('svg')
       .attr("width", this.WIDTH)
       .attr("height", this.HEIGHT)
       .attr("style", "background-color: #ccc");
-
-    const chart = this.createChart(svg);
-    const groups = this.createGroups(chart, this.data.groups);
-    this.createStacks(groups);
-
-    this.createImportantHeight(chart, 80, -this.chartMargins.left + 10, "Maximum effort");
-    this.createImportantHeight(chart, 50, -this.chartMargins.left + 50, "Medium effort");
-
   }
 
   private createImportantHeight(chart, height, x: number, label: string) {
@@ -99,12 +106,20 @@ export class GroupedStacksComponent implements OnInit {
       .domain([0, this.numberOfGroups])
       .range([0, width] as ReadonlyArray<number>);
 
-    let groups = chart.selectAll('g.group')
-      .data(data)
+    var groupSelection = chart.selectAll('g.group')
+      .data(data);
+
+    let groups = groupSelection
       .enter()
       .append('g')
       .attr("class", "group")
       .attr("transform", (d, i) => `translate(${xScale(i)}, 0)`);
+
+    groupSelection.transition().duration(500)
+      .attr("foo", (d,i) => {
+        console.log("group foo transition");
+        return "bar";
+      });
 
     // create rect around each group (for debugging)
     groups.append("rect")
@@ -120,6 +135,7 @@ export class GroupedStacksComponent implements OnInit {
   }
 
   private createStacks(groups) {
+    console.log("creating stacks");
     const groupWidth = (this.WIDTH - this.chartMargins.left - this.chartMargins.right) / this.numberOfGroups;
 
     let xScale = d3.scaleBand()
@@ -130,46 +146,69 @@ export class GroupedStacksComponent implements OnInit {
 
     let stackFn = d3.stack().keys(["apples", "bananas", "oranges", "limes"]);
 
-    let stacks = groups
+    let productSelection = groups
       .selectAll('g.product')
-      .data(d => stackFn(d.stacks.map(s =>s.values)))
-      .enter()
-      .append("g")
-      .attr("class", "product")
-      .attr("fill", (d,i) => d3.schemeCategory10[i])
-      .selectAll("rect.stack")
-      .data(d => d)
+      .data(d => stackFn(d.stacks.map(s => s.values)));
+
+    productSelection
       .enter()
       .append("rect")
-      .attr("class", "stack")
-      .attr("x", (d,i) => xScale(i))
-      .attr("y", this.chartYScale(0))
-      .attr("width", xScale.bandwidth())
-      .attr("height", 0);
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 10)
+      .attr("height", 10)
+      .transition()
+      .attr("x", Math.random() * 100)
+      .attr("y", Math.random() * 100);
 
-    stacks
-      .transition().duration(500)
-      .attr("x", (d,i) => xScale(i))
-      .attr("y", (d,i) => this.chartYScale(d[1]))
+    let stacks = productSelection
+      .enter()
+      .append("g")
+      .attr("class", (d,i) => {
+        console.log("entering product");
+        return "product";
+      })
+      .attr("fill", (d, i) => d3.schemeCategory10[i]);
+
+    productSelection.transition().duration(500)
+      .attr("foo2", (d,i) => {
+        console.log("foo2 transition");
+        return "bar2";
+      });
+
+    stacks.transition().duration(500);
+
+    let blockData = stacks
+      .selectAll("rect.block")
+      .data(d => d);
+
+    blockData.transition().duration(500)
+      .attr("x", (d,i) => {
+        console.log("umph", d);
+        return 0;
+      });
+
+    let blocks = blockData
+      .enter()
+      .append("rect")
+      .attr("class", "block")
+      .attr("x", (d, i) => xScale(i))
+      .attr("y", (d) => this.chartYScale(d[1]))
+      .attr("width", xScale.bandwidth())
+      .attr("height", d => this.chartYScale(d[0]) - this.chartYScale(d[1]));
+
+    blocks.transition().duration(500)
+      .attr("x", (d, i) => {
+        console.log("transitioning xScale", xScale(i));
+        return xScale(i);
+      })
+      .attr("y", (d) => this.chartYScale(d[1]))
       .attr("width", xScale.bandwidth())
       .attr("height", d => this.chartYScale(d[0]) - this.chartYScale(d[1]));
 
     this.createStackLabels(xScale, groups);
 
-    this.createStackRectForInspection(stacks, xScale);
-
     return stacks;
-  }
-
-  private createStackRectForInspection(stacks, xScale) {
-    stacks.append('rect')
-      .attr('class', 'rect-stack')
-      .attr("x", 0)
-      .attr("y", 0)
-      .attr("width", xScale.bandwidth())
-      .attr("height", (this.HEIGHT - this.chartMargins.top - this.chartMargins.bottom))
-      .attr("fill", "none")
-      .attr("stroke", "blue");
   }
 
   private createStackLabels(xScale, groups) {
@@ -200,7 +239,7 @@ export class GroupedStacksComponent implements OnInit {
 
   onUpdateClick() {
     this.data = this.createData();
-    console.log("TODO: update graph");
+    this.updateChart();
   }
 
   private createGroupData(): Group[] {

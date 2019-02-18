@@ -66,7 +66,9 @@ export class SortablePieComponent implements OnInit {
       .sort(null); // we'll sort the data in place when sorting changes
 
     this.arc = d3.arc<Data>()
-      .innerRadius(0)
+      .padAngle(-10)
+      .cornerRadius(10)
+      .innerRadius(10)
       .outerRadius(radius);
 
     let arc = this.arc;
