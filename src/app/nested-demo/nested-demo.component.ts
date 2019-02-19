@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import * as d3 from "d3";
 
 @Component({
@@ -8,7 +8,8 @@ import * as d3 from "d3";
 })
 export class NestedDemoComponent implements OnInit {
 
-  constructor() { }
+  constructor() {
+  }
 
   svg;
   data;
@@ -22,14 +23,46 @@ export class NestedDemoComponent implements OnInit {
 
     this.updateData();
 
+    this.createSvg();
+
+  }
+
+  private createSvg() {
+    let category = this.svg.selectAll('g.cat')
+      .data(this.data);
+    category.exit().remove();
+    let categoryEnter = category.enter()
+      .append("g")
+      .attr("class", "cat")
+      .attr("transform", (d, i) => `translate(${i * 150}, ${i * 30})`);
+
+    let group = category.merge(categoryEnter).selectAll('g.group')
+      .data(d => d.values);
+    group.exit().remove();
+    let groupEnter = group.enter()
+      .append("g")
+      .attr("class", "group")
+      .attr("transform", (d, i) => `translate(${i * 40}, ${i * 10})`);
+
+    let value = group.merge(groupEnter).selectAll("rect")
+      .data(d => d.values);
+    value.exit().remove();
+    value.enter().append("rect")
+      .attr("x", (d, i) => i * 10)
+      .attr("y", 0)
+      .attr("width", 5)
+      .attr("height", 0)
+      .transition().duration(500)
+      .attr("height", (d) => d);
+    value.transition().duration(500)
+      .attr("height", (d) => d);
 
   }
 
   private updateData() {
-    console.log("updating data");
     this.data = [
       {
-        name: "One",
+        name: "cat1",
         values: [
           {
             name: "AAA",
@@ -38,94 +71,37 @@ export class NestedDemoComponent implements OnInit {
           {
             name: "BBB",
             values: [Math.random() * 100, Math.random() * 100, Math.random() * 100]
+          },
+          {
+            name: "CCC",
+            values: [Math.random() * 100, Math.random() * 100, Math.random() * 100]
           }
         ]
       },
       {
-        name: "Two",
+        name: "cat2",
         values: [
           {
-            name: "CCC",
+            name: "AAA2",
             values: [Math.random() * 100, Math.random() * 100, Math.random() * 100]
           },
           {
-            name: "DDD",
+            name: "BBB2",
+            values: [Math.random() * 100, Math.random() * 100, Math.random() * 100]
+          },
+          {
+            name: "CCC2",
             values: [Math.random() * 100, Math.random() * 100, Math.random() * 100]
           }
         ]
       }
     ];
 
-
-    let catRectData = this.svg.selectAll("rect.cat")
-      .data(this.data);
-
-    catRectData.exit().remove();
-
-    let catGroupData = this.svg.selectAll("g.cat")
-      .data(this.data);
-
-    catGroupData.exit().remove();
-
-    let catRect = catRectData.enter()
-      .append("rect")
-      .attr("class", "cat")
-      .attr("x", (d,i) => i * 100)
-      .attr("y", 0)
-      .attr("width", 100)
-      .attr("height", 0)
-      .attr("fill", "#f0f")
-      .attr("stroke", "black")
-      .transition().duration(500)
-      .attr("height", (c) => {
-        return d3.max(c.values.map(s => d3.max(s.values)))
-      });
-
-    catRectData.transition().duration(500)
-      .attr("height", (c) => {
-        return d3.max(c.values.map(s => d3.max(s.values)))
-      });
-
-
-    let catGroup = catGroupData.enter()
-      .append("g")
-      .attr("class", "cat")
-      .attr("transform", (d,i) => `translate(${i * 100}, 0)`);
-
-    let subcatGroupData = catGroup.selectAll("g.subcat")
-      .data(d => d.values);
-
-    subcatGroupData.transition().duration(500)
-      .attr("opacity", 0);
-
-    subcatGroupData.exit().remove();
-
-    let subcatGroup = subcatGroupData.enter()
-      .append("g")
-      .attr("class", "subcat")
-      .attr("transform", (d,i) => `translate(${i*50}, 0)`);
-
-    let blockRectData = subcatGroup.selectAll("rect.block")
-      .data(d => d.values);
-
-    blockRectData.transition().duration(500)
-      .attr("height", (d,i) => d);
-
-    blockRectData.exit().remove();
-
-    let blockRect = blockRectData.enter()
-      .append("rect")
-      .attr("class", "block")
-      .attr("x", (d,i) => i * 10)
-      .attr("y", 0)
-      .attr("width", 10)
-      .attr("height", 0)
-      .transition().duration(1000)
-      .attr("height", (d,i) => d);
-
   }
 
-  onClick() {
-    this.updateData();
+    onClick()
+    {
+      this.updateData();
+      this.createSvg();
+    }
   }
-}
