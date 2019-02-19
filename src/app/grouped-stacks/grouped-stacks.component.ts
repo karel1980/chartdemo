@@ -106,23 +106,17 @@ export class GroupedStacksComponent implements OnInit {
       .domain([0, this.numberOfGroups])
       .range([0, width] as ReadonlyArray<number>);
 
-    var groupSelection = chart.selectAll('g.group')
+    var groupData = chart.selectAll('g.group')
       .data(data);
 
-    let groups = groupSelection
+    let groupEnter = groupData
       .enter()
       .append('g')
       .attr("class", "group")
       .attr("transform", (d, i) => `translate(${xScale(i)}, 0)`);
 
-    groupSelection.transition().duration(500)
-      .attr("foo", (d,i) => {
-        console.log("group foo transition");
-        return "bar";
-      });
-
-    // create rect around each group (for debugging)
-    groups.append("rect")
+    // create rect around each group
+    groupEnter.append("rect")
       .attr("class", "group-rect")
       .attr("x", 0)
       .attr("y", 0)
@@ -131,11 +125,10 @@ export class GroupedStacksComponent implements OnInit {
       .attr("fill", "none")
       .attr("stroke", "#999");
 
-    return groups;
+    return groupEnter.merge(groupData);
   }
 
   private createStacks(groups) {
-    console.log("creating stacks");
     const groupWidth = (this.WIDTH - this.chartMargins.left - this.chartMargins.right) / this.numberOfGroups;
 
     let xScale = d3.scaleBand()
@@ -146,69 +139,41 @@ export class GroupedStacksComponent implements OnInit {
 
     let stackFn = d3.stack().keys(["apples", "bananas", "oranges", "limes"]);
 
-    let productSelection = groups
+    let product = groups
       .selectAll('g.product')
       .data(d => stackFn(d.stacks.map(s => s.values)));
 
-    productSelection
-      .enter()
-      .append("rect")
-      .attr("x", 0)
-      .attr("y", 0)
-      .attr("width", 10)
-      .attr("height", 10)
-      .transition()
-      .attr("x", Math.random() * 100)
-      .attr("y", Math.random() * 100);
-
-    let stacks = productSelection
+    let productEnter = product
       .enter()
       .append("g")
-      .attr("class", (d,i) => {
-        console.log("entering product");
-        return "product";
-      })
+      .attr("class", "product")
       .attr("fill", (d, i) => d3.schemeCategory10[i]);
 
-    productSelection.transition().duration(500)
-      .attr("foo2", (d,i) => {
-        console.log("foo2 transition");
-        return "bar2";
-      });
-
-    stacks.transition().duration(500);
-
-    let blockData = stacks
+    let blockData = productEnter.merge(product)
       .selectAll("rect.block")
       .data(d => d);
 
-    blockData.transition().duration(500)
-      .attr("x", (d,i) => {
-        console.log("umph", d);
-        return 0;
-      });
-
-    let blocks = blockData
+    let blockEnter = blockData
       .enter()
       .append("rect")
       .attr("class", "block")
       .attr("x", (d, i) => xScale(i))
       .attr("y", (d) => this.chartYScale(d[1]))
       .attr("width", xScale.bandwidth())
-      .attr("height", d => this.chartYScale(d[0]) - this.chartYScale(d[1]));
+      .attr("height", d => this.chartYScale(d[0]) - this.chartYScale(d[1]))
+      .attr("stroke", "black");
 
-    blocks.transition().duration(500)
-      .attr("x", (d, i) => {
-        console.log("transitioning xScale", xScale(i));
-        return xScale(i);
-      })
+    blockEnter.merge(blockData).transition()
+      .duration(500)
+      .ease(d3.easeExp)
+      .attr("x", (d,i) => xScale(i))
       .attr("y", (d) => this.chartYScale(d[1]))
       .attr("width", xScale.bandwidth())
       .attr("height", d => this.chartYScale(d[0]) - this.chartYScale(d[1]));
 
     this.createStackLabels(xScale, groups);
 
-    return stacks;
+    return productEnter;
   }
 
   private createStackLabels(xScale, groups) {
